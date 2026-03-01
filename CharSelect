@@ -1,0 +1,97 @@
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <vector>
+#include <string>
+
+// 1. คลาสสำหรับข้อมูลตัวละคร
+struct Character {
+    std::string name;
+    std::string job;
+    sf::Color color; // ใช้สีแทนภาพชั่วคราว
+    bool isSelected = false;
+
+    Character(std::string n, std::string j, sf::Color c) 
+        : name(n), job(j), color(c) {}
+};
+
+class PartySystem {
+private:
+    std::vector<Character> availableCharacters;
+    std::vector<int> selectedIndices; // เก็บ index ของตัวละครที่ถูกเลือก
+    const int MAX_PARTY_SIZE = 3;
+
+public:
+    PartySystem() {
+        // 2. สร้างตัวละครเริ่มต้น 6 ตัว
+        availableCharacters.push_back(Character("Arthur", "KNIGHT", sf::Color::Red));
+        availableCharacters.push_back(Character("Robin", "ARCHER", sf::Color::Green));
+        availableCharacters.push_back(Character("Jaina", "MAGE", sf::Color::Blue));
+        availableCharacters.push_back(Character("Braum", "TANK", sf::Color::Yellow));
+        availableCharacters.push_back(Character("Mercy", "SUPPORT", sf::Color::Cyan));
+        availableCharacters.push_back(Character("Neo", "SPECIAL", sf::Color::Magenta));
+    }
+
+    // ฟังก์ชันเลือกตัวละครเข้า Party
+    void selectCharacter(int index) {
+        if (selectedIndices.size() < MAX_PARTY_SIZE && !availableCharacters[index].isSelected) {
+            availableCharacters[index].isSelected = true;
+            selectedIndices.push_back(index);
+            std::cout << "Added: " << availableCharacters[index].job << " to party.\n";
+        } else if (availableCharacters[index].isSelected) {
+            std::cout << "Character already in party!\n";
+        } else {
+            std::cout << "Party is full!\n";
+        }
+    }
+
+    void displayStatus() {
+        std::cout << "Current Party Size: " << selectedIndices.size() << "/" << MAX_PARTY_SIZE << "\n";
+    }
+
+    const std::vector<Character>& getAvailable() { return availableCharacters; }
+};
+
+int main() {
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Turn-Based Party Selection");
+    PartySystem myParty;
+
+    // สร้าง UI อย่างง่าย (สี่เหลี่ยมแทนตัวละคร)
+    std::vector<sf::RectangleShape> buttons;
+    for (int i = 0; i < 6; ++i) {
+        sf::RectangleShape rect(sf::Vector2f(100, 100));
+        rect.setPosition(50 + (i * 120), 200);
+        rect.setFillColor(myParty.getAvailable()[i].color);
+        buttons.push_back(rect);
+    }
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed)
+                window.close();
+
+            // ตรวจสอบการคลิกเมาส์เพื่อเลือกตัวละคร
+            if (event.type == sf::Event::MouseButtonPressed) {
+                if (event.mouseButton.button == sf::Mouse::Left) {
+                    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+                    for (int i = 0; i < buttons.size(); ++i) {
+                        if (buttons[i].getGlobalBounds().contains(mousePos.x, mousePos.y)) {
+                            myParty.selectCharacter(i);
+                            buttons[i].setOutlineThickness(5);
+                            buttons[i].setOutlineColor(sf::Color::White);
+                        }
+                    }
+                }
+            }
+        }
+
+        window.clear();
+        // วาดปุ่มตัวละคร
+        for (auto& btn : buttons) {
+            window.draw(btn);
+        }
+        window.display();
+    }
+
+    return 0;
+}
